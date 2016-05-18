@@ -20,9 +20,14 @@ function newplayer.showrulesform(name)
 	else
 		newplayer.rules_subbed = newplayer.rules
 	end
+	if newplayer.keyword and minetest.check_player_privs(name,{interact=true}) and not minetest.check_player_privs(name,{server=true}) then
+		newplayer.rules_subbed_interact = string.gsub(newplayer.rules,"@KEYWORD",minetest.formspec_escape("[Hidden because you already have interact]"))
+	else
+		newplayer.rules_subbed_interact = newplayer.rules
+	end		
 	local form_interact = "size[8,10]"..
 				"label[0,0;Server Rules]"..
-				"textarea[0.25,1;8,7;rules;;"..newplayer.rules.."]"
+				"textarea[0.25,1;8,7;rules;;"..newplayer.rules_subbed_interact.."]"
 	local form_nointeract = "size[8,10]"..
 				"label[0,0;Server Rules]"..
 				"textarea[0.25,1;8,7;rules;;"..newplayer.rules_subbed.."]"..
@@ -70,9 +75,7 @@ end)
 minetest.register_on_player_receive_fields(function(player,formname,fields)
 	local name = player:get_player_name()
 	if formname == "newplayer:rules_nointeract" then
-		if fields.quit then
-			newplayer.showrulesform(name)
-		elseif fields.yes then
+		if fields.yes then
 			if not newplayer.keyword or string.lower(fields.keyword) == string.lower(newplayer.keyword) then
 				local privs = minetest.get_player_privs(name)
 				privs.interact = true
