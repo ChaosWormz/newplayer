@@ -104,7 +104,7 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 			end
 		elseif fields.no then
 			local form =    "size[5,3]"..
-					"label[1,0;You may remain on the server\,]"..
+					"label[1,0;You may remain on the server,]"..
 					"label[1,0.5;but you may not dig or build]"..
 					"label[1,1;until you agree to the rules.]"..
 					"button_exit[1.5,2;2,1;quit;OK]"
