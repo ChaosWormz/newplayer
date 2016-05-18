@@ -2,3 +2,4 @@ This mod adds a form containing the rules that is shown to players without inter
 If they press "I agree", they are teleported to the normal spawn. The /spawn command will also take them back there (or to the non-interact spawn if they don't have interact).
 If they press "I do not agree", they are allowed to play normally (but without interact), although bright red text will be placed in the middle of the screen explaining the situation.
 At any point, the /rules command will show the rules. The /set_interact_spawn and /set_no_interact_spawn commands (requiring the server priv) will set the respective spawn point to your current location.
+To set the rules, place a file called "rules.txt" in the mod's directory. If this file does not exist, the mod will tell you where to create it if you attempt to view the rules.
