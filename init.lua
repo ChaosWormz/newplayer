@@ -36,7 +36,7 @@ function newplayer.showrulesform(name)
 		if minetest.check_player_privs(name,{server=true}) then
 			form_interact = form_interact.."button_exit[1,9;2,1;quit;OK]"
 			form_interact = form_interact.."button[5,9;2,1;edit;Edit]"
-			form_interact = form_interact.."field[0.25,8;8,1;keyword;Keyword\:;"..(newplayer.keyword or "").."]"
+			form_interact = form_interact.."field[0.25,8;8,1;keyword;Keyword:;"..(newplayer.keyword or "").."]"
 		else
 			form_interact = form_interact.."button_exit[3,9;2,1;quit;OK]"
 		end
@@ -142,7 +142,7 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 					"textarea[0.25,1;8,7;rules;;"..newplayer.rules.."]"..
 					"button_exit[1,9;2,1;save;Save]"..
 					"button_exit[5,9;2,1;quit;Cancel]"..
-					"field[0.25,8;8,1;keyword;Keyword\:;"..(newplayer.keyword or "").."]"
+					"field[0.25,8;8,1;keyword;Keyword:;"..(newplayer.keyword or "").."]"
 			minetest.show_formspec(name,"newplayer:editrules",form)
 		end
 	elseif formname == "newplayer:agreethanks" or formname == "newplayer:disagreewarning" then
@@ -169,7 +169,7 @@ minetest.register_chatcommand("editrules",{
 				"textarea[0.25,1;8,7;rules;;"..newplayer.rules.."]"..
 				"button_exit[1,9;2,1;save;Save]"..
 				"button_exit[5,9;2,1;quit;Cancel]"..
-				"field[0.25,8;8,1;keyword;Keyword\:;"..(newplayer.keyword or "").."]"
+				"field[0.25,8;8,1;keyword;Keyword:;"..(newplayer.keyword or "").."]"
 		minetest.show_formspec(name,"newplayer:editrules",form)
 		return true
 	end}
