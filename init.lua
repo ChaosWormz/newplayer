@@ -29,7 +29,7 @@ function newplayer.showrulesform(name)
 				"button[1,9;2,1;yes;I agree]"..
 				"button[5,9;2,1;no;I do not agree]"
 	if newplayer.keyword then
-		form_nointeract = form_nointeract.."field[0.25,8;8,1;keyword;Enter keyword from rules above\:;]"
+		form_nointeract = form_nointeract.."field[0.25,8;8,1;keyword;Enter keyword from rules above:;]"
 	end
 	local hasinteract = minetest.check_player_privs(name,{interact=true})
 	if hasinteract then
