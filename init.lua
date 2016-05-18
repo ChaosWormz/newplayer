@@ -5,13 +5,13 @@ if newplayer.keyword == "" then newplayer.keyword = nil end
 
 newplayer.hudids = {}
 
-local f = io.open(minetest.get_modpath("newplayer")..DIR_DELIM.."rules.txt","r")
+local f = io.open(minetest.get_worldpath()..DIR_DELIM.."newplayer-rules.txt","r")
 if f then
 	local d = f:read("*all")
 	newplayer.rules = minetest.formspec_escape(d)
 	f:close()
 else
-	newplayer.rules = "Rules file not found!\n\nThe file should be named \"rules.txt\" and placed in the following location:\n\n"..minetest.get_modpath("newplayer")..DIR_DELIM
+	newplayer.rules = "Rules file not found!\n\nThe file should be named \"newplayer-rules.txt\" and placed in the following location:\n\n"..minetest.get_worldpath()..DIR_DELIM
 end
 
 function newplayer.showrulesform(name)
@@ -117,7 +117,7 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 	elseif formname == "newplayer:editrules" then
 		if minetest.check_player_privs(name, {server=true}) then
 			if fields.save then
-				local f = io.open(minetest.get_modpath("newplayer")..DIR_DELIM.."rules.txt","w")
+				local f = io.open(minetest.get_worldpath()..DIR_DELIM.."newplayer-rules.txt","w")
 				f:write(fields.rules)
 				f:close()
 				newplayer.rules = fields.rules
