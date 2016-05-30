@@ -1,7 +1,15 @@
 newplayer = {}
 
-newplayer.keyword = minetest.setting_get("interact_keyword")
-if newplayer.keyword == "" then newplayer.keyword = nil end
+local f = io.open(minetest.get_worldpath()..DIR_DELIM.."newplayer-keywords.txt","r")
+if f then
+	local d = f:read("*all")
+	newplayer.keywords = minetest.deserialize(d)
+	f:close()
+else
+	newplayer.keywords = {}
+end
+
+newplayer.assigned_keywords = {}
 
 newplayer.hudids = {}
 
@@ -14,13 +22,21 @@ else
 	newplayer.rules = "Rules file not found!\n\nThe file should be named \"newplayer-rules.txt\" and placed in the following location:\n\n"..minetest.get_worldpath()..DIR_DELIM
 end
 
+function newplayer.savekeywords()
+	local f = io.open(minetest.get_worldpath()..DIR_DELIM.."newplayer-keywords.txt","w")
+	local d = minetest.serialize(newplayer.keywords)
+	f:write(d)
+	f:close()
+end
+
 function newplayer.showrulesform(name)
-	if newplayer.keyword then
-		newplayer.rules_subbed = string.gsub(newplayer.rules,"@KEYWORD",newplayer.keyword)
+	if #newplayer.keywords > 0 then
+		newplayer.assigned_keywords[name] = newplayer.keywords[math.random(1,#newplayer.keywords)]
+		newplayer.rules_subbed = string.gsub(newplayer.rules,"@KEYWORD",newplayer.assigned_keywords[name])
 	else
 		newplayer.rules_subbed = newplayer.rules
 	end
-	if newplayer.keyword and minetest.check_player_privs(name,{interact=true}) and not minetest.check_player_privs(name,{server=true}) then
+	if #newplayer.keywords > 0 and minetest.check_player_privs(name,{interact=true}) and not minetest.check_player_privs(name,{server=true}) then
 		newplayer.rules_subbed_interact = string.gsub(newplayer.rules,"@KEYWORD",minetest.formspec_escape("[Hidden because you already have interact]"))
 	else
 		newplayer.rules_subbed_interact = newplayer.rules
@@ -33,7 +49,7 @@ function newplayer.showrulesform(name)
 				"textarea[0.25,1;8,7;rules;;"..newplayer.rules_subbed.."]"..
 				"button[1,9;2,1;yes;I agree]"..
 				"button[5,9;2,1;no;I do not agree]"
-	if newplayer.keyword then
+	if #newplayer.keywords > 0 then
 		form_nointeract = form_nointeract.."field[0.25,8;8,1;keyword;Enter keyword from rules above:;]"
 	end
 	local hasinteract = minetest.check_player_privs(name,{interact=true})
@@ -41,7 +57,6 @@ function newplayer.showrulesform(name)
 		if minetest.check_player_privs(name,{server=true}) then
 			form_interact = form_interact.."button_exit[1,9;2,1;quit;OK]"
 			form_interact = form_interact.."button[5,9;2,1;edit;Edit]"
-			form_interact = form_interact.."field[0.25,8;8,1;keyword;Keyword:;"..(newplayer.keyword or "").."]"
 		else
 			form_interact = form_interact.."button_exit[3,9;2,1;quit;OK]"
 		end
@@ -76,7 +91,7 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 	local name = player:get_player_name()
 	if formname == "newplayer:rules_nointeract" then
 		if fields.yes then
-			if not newplayer.keyword or string.lower(fields.keyword) == string.lower(newplayer.keyword) then
+			if  #newplayer.keywords == 0 or (not newplayer.assigned_keywords[name]) or string.lower(fields.keyword) == string.lower(newplayer.assigned_keywords[name]) then
 				local privs = minetest.get_player_privs(name)
 				privs.interact = true
 				minetest.set_player_privs(name,privs)
@@ -124,15 +139,6 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 				f:write(fields.rules)
 				f:close()
 				newplayer.rules = fields.rules
-				if fields.keyword ~= "" then
-					newplayer.keyword = fields.keyword
-					minetest.setting_set("interact_keyword",fields.keyword)
-					minetest.setting_save()
-				else
-					newplayer.keyword = nil
-					minetest.setting_set("interact_keyword","")
-					minetest.setting_save()
-				end
 				minetest.chat_send_player(name,"Rules/keyword updated successfully.")
 			end
 		else
@@ -144,8 +150,7 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 					"label[0,0;Editing Server Rules]"..
 					"textarea[0.25,1;8,7;rules;;"..newplayer.rules.."]"..
 					"button_exit[1,9;2,1;save;Save]"..
-					"button_exit[5,9;2,1;quit;Cancel]"..
-					"field[0.25,8;8,1;keyword;Keyword:;"..(newplayer.keyword or "").."]"
+					"button_exit[5,9;2,1;quit;Cancel]"
 			minetest.show_formspec(name,"newplayer:editrules",form)
 		end
 	elseif formname == "newplayer:agreethanks" or formname == "newplayer:disagreewarning" then
@@ -171,8 +176,7 @@ minetest.register_chatcommand("editrules",{
 				"label[0,0;Editing Server Rules]"..
 				"textarea[0.25,1;8,7;rules;;"..newplayer.rules.."]"..
 				"button_exit[1,9;2,1;save;Save]"..
-				"button_exit[5,9;2,1;quit;Cancel]"..
-				"field[0.25,8;8,1;keyword;Keyword:;"..(newplayer.keyword or "").."]"
+				"button_exit[5,9;2,1;quit;Cancel]"
 		minetest.show_formspec(name,"newplayer:editrules",form)
 		return true
 	end}
@@ -202,36 +206,54 @@ minetest.register_chatcommand("set_interact_spawn",{
 	end}
 )
 
-minetest.register_chatcommand("set_keyword",{
-	params = "[keyword]",
-	description = "Set the keyword used to get interact",
+minetest.register_chatcommand("getkeywords",{
+	params = "",
+	description = "Gets the list of keywords used to obtain the interact privilege",
 	privs = {server=true},
-	func = function(name,param)
-		if param and param ~= "" then
-			newplayer.keyword = param
-			minetest.setting_set("interact_keyword",param)
-			minetest.setting_save()
-			return true, "Keyword set to: "..param
+	func = function(name)
+		local out = ""
+		if #newplayer.keywords > 0 then
+			out = "Currently configured keywords:"
+			for _,kw in pairs(newplayer.keywords) do
+				out = out.."\n"..kw
+			end
 		else
-			newplayer.keyword = nil
-			minetest.setting_set("interact_keyword","")
-			minetest.setting_save()
-			return true, "Keyword cleared."
+			out = "No keywords are currently set."
 		end
+		return true, out
 	end}
 )
 
-minetest.register_chatcommand("get_keyword",{
-	params = "",
-	description = "Shows the keyword used to get interact",
+minetest.register_chatcommand("addkeyword",{
+	params = "<keyword>",
+	description = "Add a keyword to the list of keywords used to obtain the interact privilege",
 	privs = {server=true},
-	func = function(name)
-		local kw = newplayer.keyword
-		if kw then
-			return true, "Keyword is: "..kw
-		else
-			return true, "No keyword is currently set."
+	func = function(name,param)
+		if (not param) or param == "" then
+			return true, "ERROR: No keyword supplied"
 		end
+		table.insert(newplayer.keywords,param)
+		newplayer.savekeywords()
+		return true, string.format("Keyword \"%s\" added",param)
+	end}
+)
+
+minetest.register_chatcommand("delkeyword",{
+	params = "<keyword>",
+	description = "Remove a keyword from the list of keywords used to obtain the interact privilege",
+	privs = {server=true},
+	func = function(name,param)
+		if (not param) or param == "" then
+			return true, "ERROR: No keyword supplied"
+		end
+		for k,v in pairs(newplayer.keywords) do
+			if v == param then
+				newplayer.keywords[k] = nil
+				newplayer.savekeywords()
+				return true, string.format("Keyword \"%s\" removed",param)
+			end
+		end
+		return true, string.format("ERROR: Keyword \"%s\" not found",param)
 	end}
 )
 
