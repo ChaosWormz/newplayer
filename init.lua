@@ -105,7 +105,7 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 					minetest.chat_send_player(name,"Teleporting to spawn...")
 					player:setpos(spawn)
 				else
-					minetest.chat_send_player(name,"ERROR: The spawn point is not set!")
+					minetest.chat_send_player(name,minetest.colorize("#FF0000","ERROR: ").."The spawn point is not set!")
 				end
 				local form =    "size[5,3]"..
 						"label[1,0;Thank you for agreeing]"..
@@ -139,7 +139,7 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 				f:write(fields.rules)
 				f:close()
 				newplayer.rules = fields.rules
-				minetest.chat_send_player(name,"Rules/keyword updated successfully.")
+				minetest.chat_send_player(name,minetest.colorize("#55FF55","Success: ").."Rules/keyword updated.")
 			end
 		else
 			minetest.chat_send_player(name,"You hacker you... nice try!")
@@ -190,7 +190,7 @@ minetest.register_chatcommand("set_no_interact_spawn",{
 		local pos = minetest.get_player_by_name(name):getpos()
 		minetest.setting_set("spawnpoint_no_interact",string.format("%s,%s,%s",pos.x,pos.y,pos.z))
 		minetest.setting_save()
-		return true, "Spawn point for players without interact set to: "..minetest.pos_to_string(pos)
+		return true, minetest.colorize("#55FF55","Success: ").."Spawn point for players without interact set to: "..minetest.colorize("#00FFFF",minetest.pos_to_string(pos))
 	end}
 )
 
@@ -202,7 +202,7 @@ minetest.register_chatcommand("set_interact_spawn",{
 		local pos = minetest.get_player_by_name(name):getpos()
 		minetest.setting_set("spawnpoint_interact",string.format("%s,%s,%s",pos.x,pos.y,pos.z))
 		minetest.setting_save()
-		return true, "Spawn point for players with interact set to: "..minetest.pos_to_string(pos)
+		return true, minetest.colorize("#55FF55","Success: ").."Spawn point for players with interact set to: "..minetest.colorize("#00FFFF",minetest.pos_to_string(pos))
 	end}
 )
 
@@ -215,7 +215,7 @@ minetest.register_chatcommand("getkeywords",{
 		if #newplayer.keywords > 0 then
 			out = "Currently configured keywords:"
 			for _,kw in pairs(newplayer.keywords) do
-				out = out.."\n"..kw
+				out = out.."\n"..minetest.colorize("#00FFFF",kw)
 			end
 		else
 			out = "No keywords are currently set."
@@ -230,7 +230,7 @@ minetest.register_chatcommand("addkeyword",{
 	privs = {server=true},
 	func = function(name,param)
 		if (not param) or param == "" then
-			return true, "ERROR: No keyword supplied"
+			return true, minetest.colorize("#FF0000","ERROR: ").."No keyword supplied"
 		end
 		table.insert(newplayer.keywords,param)
 		newplayer.savekeywords()
@@ -244,16 +244,16 @@ minetest.register_chatcommand("delkeyword",{
 	privs = {server=true},
 	func = function(name,param)
 		if (not param) or param == "" then
-			return true, "ERROR: No keyword supplied"
+			return true, minetest.colorize("#FF0000","ERROR: ").."No keyword supplied"
 		end
 		for k,v in pairs(newplayer.keywords) do
 			if v == param then
 				newplayer.keywords[k] = nil
 				newplayer.savekeywords()
-				return true, string.format("Keyword \"%s\" removed",param)
+				return true, "Keyword "..minetest.colorize("#00FFFF",param).." removed"
 			end
 		end
-		return true, string.format("ERROR: Keyword \"%s\" not found",param)
+		return true, minetest.colorize("#FF0000","ERROR: ").."Keyword "..minetest.colorize("#00FFFF",param).." not found"
 	end}
 )
 
@@ -269,7 +269,7 @@ minetest.register_chatcommand("spawn",{
 				player:setpos(pos)
 				return true, "Teleporting to spawn..."
 			else
-				return true, "ERROR: The spawn point is not set!"
+				return true, minetest.colorize("#FF0000","ERROR: ").."The spawn point is not set!"
 			end
 		else
 			local pos = minetest.setting_get_pos("spawnpoint_no_interact")
@@ -277,7 +277,7 @@ minetest.register_chatcommand("spawn",{
 				player:setpos(pos)
 				return true, "Teleporting to spawn..."
 			else
-				return true, "ERROR: The spawn point is not set!"
+				return true, minetest.colorize("#FF0000","ERROR: ").."The spawn point is not set!"
 			end
 		end
 	end}
