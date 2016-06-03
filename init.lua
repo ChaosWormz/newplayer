@@ -37,36 +37,68 @@ function newplayer.savekeywords()
 	f:close()
 end
 
+local editformspec1 = "size[13,9]"..
+	"label[0,-0.1;Editing Server Rules]"..
+	"textarea[0.25,0.5;12.5,7;rules;;"
+-- the rules get inserted between these two on demand
+local editformspec2 = "]"..
+	"button_exit[0.5,8.1;2,1;save;Save]"..
+	"button_exit[5,8.1;2,1;quit;Cancel]"
+
 function newplayer.showrulesform(name)
+
+	-- Word-wrap the file
+	local strstart = 1
+	local charpos = 0
+	local linelen = 0
+	local tline = 1
+	local lastbreak = 1
+
+	newplayer.rules_formspec_buffer = ""
+
+	while charpos < #newplayer.rules do
+		charpos = charpos + 1
+		linelen = linelen + 1
+		local c = string.sub(newplayer.rules, charpos, charpos)
+		if c == " " or c == "\t" or c == "\n" or c == "\r" then lastbreak = charpos end
+		if linelen > 70 or c == "\n" or c == "\r" then
+			newplayer.rules_formspec_buffer = newplayer.rules_formspec_buffer..","..string.sub(newplayer.rules, strstart, lastbreak-1)
+			tline = tline + 1
+			strstart = lastbreak + 1
+			charpos = strstart
+			linelen = 0
+		end
+	end
+
 	if #newplayer.keywords > 0 then
 		newplayer.assigned_keywords[name] = newplayer.keywords[math.random(1,#newplayer.keywords)]
-		newplayer.rules_subbed = string.gsub(newplayer.rules,"@KEYWORD",newplayer.assigned_keywords[name])
+		newplayer.rules_subbed = string.gsub(newplayer.rules_formspec_buffer,"@KEYWORD",newplayer.assigned_keywords[name])
 	else
-		newplayer.rules_subbed = newplayer.rules
+		newplayer.rules_subbed = newplayer.rules_formspec_buffer
 	end
 	if #newplayer.keywords > 0 and minetest.check_player_privs(name,{interact=true}) and not minetest.check_player_privs(name,{server=true}) then
-		newplayer.rules_subbed_interact = string.gsub(newplayer.rules,"@KEYWORD",minetest.formspec_escape("[Hidden because you already have interact]"))
+		newplayer.rules_subbed_interact = string.gsub(newplayer.rules_formspec_buffer,"@KEYWORD",minetest.formspec_escape("[Hidden because you already have interact]"))
 	else
-		newplayer.rules_subbed_interact = newplayer.rules
+		newplayer.rules_subbed_interact = newplayer.rules_formspec_buffer
 	end		
-	local form_interact = "size[8,10]"..
-				"label[0,0;Server Rules]"..
-				"textarea[0.25,1;8,7;rules;;"..newplayer.rules_subbed_interact.."]"
-	local form_nointeract = "size[8,10]"..
-				"label[0,0;Server Rules]"..
-				"textarea[0.25,1;8,7;rules;;"..newplayer.rules_subbed.."]"..
-				"button[1,9;2,1;yes;I agree]"..
-				"button[5,9;2,1;no;I do not agree]"
+	local form_interact = "size[13,9]"..
+				"label[0,-0.1;Server Rules]"..
+				"textlist[0.25,0.5;12.5,6.25;rules;"..newplayer.rules_subbed_interact.."]"
+	local form_nointeract = "size[13,9]"..
+				"label[0,-0.1;Server Rules]"..
+				"textlist[0.25,0.5;12.5,6.25;rules;"..newplayer.rules_subbed.."]"..
+				"button[1,8;2,1;yes;I agree]"..
+				"button[5,8;2,1;no;I do not agree]"
 	if #newplayer.keywords > 0 then
-		form_nointeract = form_nointeract.."field[0.25,8;8,1;keyword;Enter keyword from rules above:;]"
+		form_nointeract = form_nointeract.."field[0.5,7.6;8,1;keyword;Enter keyword from rules above:;]"
 	end
 	local hasinteract = minetest.check_player_privs(name,{interact=true})
 	if hasinteract then
 		if minetest.check_player_privs(name,{server=true}) then
-			form_interact = form_interact.."button_exit[1,9;2,1;quit;OK]"
-			form_interact = form_interact.."button[5,9;2,1;edit;Edit]"
+			form_interact = form_interact.."button_exit[0.4,8.1;2,1;quit;OK]"
+			form_interact = form_interact.."button[4,8.1;2,1;edit;Edit]"
 		else
-			form_interact = form_interact.."button_exit[3,9;2,1;quit;OK]"
+			form_interact = form_interact.."button_exit[0.4,8.1;2,1;quit;OK]"
 		end
 		minetest.show_formspec(name,"newplayer:rules_interact",form_interact)
 	else
@@ -146,7 +178,7 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 				local f = io.open(minetest.get_worldpath()..DIR_DELIM.."newplayer-rules.txt","w")
 				f:write(fields.rules)
 				f:close()
-				newplayer.rules = fields.rules
+				newplayer.rules = minetest.formspec_escape(fields.rules)
 				minetest.chat_send_player(name,newplayer.colorize("#55FF55","Success: ").."Rules/keyword updated.")
 			end
 		else
@@ -154,12 +186,7 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 		end
 	elseif formname == "newplayer:rules_interact" then
 		if fields.edit and minetest.check_player_privs(name,{server=true}) then
-			local form =    "size[8,10]"..
-					"label[0,0;Editing Server Rules]"..
-					"textarea[0.25,1;8,7;rules;;"..newplayer.rules.."]"..
-					"button_exit[1,9;2,1;save;Save]"..
-					"button_exit[5,9;2,1;quit;Cancel]"
-			minetest.show_formspec(name,"newplayer:editrules",form)
+			minetest.show_formspec(name,"newplayer:editrules",editformspec1..newplayer.rules..editformspec2)
 		end
 	elseif formname == "newplayer:agreethanks" or formname == "newplayer:disagreewarning" then
 		return true
@@ -180,12 +207,7 @@ minetest.register_chatcommand("editrules",{
 	description = "Edit the rules",
 	privs = {server=true},
 	func = function(name)
-		local form =    "size[8,10]"..
-				"label[0,0;Editing Server Rules]"..
-				"textarea[0.25,1;8,7;rules;;"..newplayer.rules.."]"..
-				"button_exit[1,9;2,1;save;Save]"..
-				"button_exit[5,9;2,1;quit;Cancel]"
-		minetest.show_formspec(name,"newplayer:editrules",form)
+		minetest.show_formspec(name,"newplayer:editrules",editformspec1..newplayer.rules..editformspec2)
 		return true
 	end}
 )
