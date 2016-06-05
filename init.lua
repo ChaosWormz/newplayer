@@ -132,7 +132,9 @@ minetest.register_on_joinplayer(function(player)
 	if minetest.get_player_privs(name).nointeract then
 		
 		minetest.after(0,newplayer.showrulesform,name)
-		player:set_nametag_attributes({color = { a=255,r=255,g=0,b=0 },text = name.." (Guest)",})
+		if not minetest.get_player_privs(name).interact then
+			player:set_nametag_attributes({color = { a=255,r=255,g=0,b=0 },text = name.." (Guest)",})
+		end
 	end
 end)
 
