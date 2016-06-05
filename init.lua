@@ -1,3 +1,5 @@
+minetest.register_privilege("nointeract", "Can enter keyword to get interact")
+
 newplayer = {}
 
 if type(minetest.colorize) == "function" then
@@ -130,7 +132,7 @@ end)
 minetest.register_on_player_receive_fields(function(player,formname,fields)
 	local name = player:get_player_name()
 	if formname == "newplayer:rules_nointeract" then
-		if fields.yes then
+		if fields.yes and minetest.get_player_privs(name).nointeract then
 			if  #newplayer.keywords == 0 or (not newplayer.assigned_keywords[name]) or string.lower(fields.keyword) == string.lower(newplayer.assigned_keywords[name]) then
 				local privs = minetest.get_player_privs(name)
 				privs.interact = true
@@ -160,6 +162,9 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 						"button[1.5,2;2,1;quit;Try Again]"
 				minetest.show_formspec(name,"newplayer:tryagain",form)
 			end
+		
+		elseif fields.yes and not minetest.get_player_privs(name).nointeract then minetest.chat_send_player(name,"You are forbidden from getting interact!")
+		
 		elseif fields.no then
 			local form =    "size[5,3]"..
 					"label[1,0;You may remain on the server,]"..
