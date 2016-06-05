@@ -158,7 +158,7 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 				else
 					minetest.chat_send_player(name,newplayer.colorize("#FF0000","ERROR: ").."The spawn point is not set!")
 				end
-				local form =    "size[5,3]"..
+				local form =    "size[6,3]"..
 						"label[1,0;Thank you for agreeing]"..
 						"label[1,0.5;to the rules!]"..
 						"label[1,1;You are now free to play normally.]"..
