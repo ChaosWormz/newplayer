@@ -130,7 +130,9 @@ minetest.register_on_joinplayer(function(player)
 		})
 	end
 	if minetest.get_player_privs(name).nointeract then
+		
 		minetest.after(0,newplayer.showrulesform,name)
+		player:set_nametag_attributes({color = { a=255,r=255,g=0,b=0 },text = name.." (Guest)",})
 	end
 end)
 
@@ -146,6 +148,7 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 					end
 					privs.nointeract = nil
 				minetest.set_player_privs(name, privs)
+				player:set_nametag_attributes({color = {a=255, r=255, g=255,b=255},text = name,}) --return tag to normal
 				if newplayer.hudids[name] then
 					minetest.get_player_by_name(name):hud_remove(newplayer.hudids[name])
 					minetest.get_player_by_name(name):hud_remove(newplayer.hudids[name]-1)
