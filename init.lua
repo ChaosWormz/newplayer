@@ -1,4 +1,5 @@
 minetest.register_privilege("nointeract", "Can enter keyword to get interact")
+minetest.register_privilege("spawn", "can use spawn command")
 
 newplayer = {}
 
@@ -117,16 +118,20 @@ minetest.register_on_joinplayer(function(player)
 	if nointeractspawn then
 		player:setpos(nointeractspawn)
 	end
-	newplayer.hudids[name] = player:hud_add({
-		hud_elem_type = "text",
-		position = {x=0.5,y=0.5},
-		scale = {x=100,y=100},
-		text = "BUILDING DISABLED\nYou must agree to\nthe rules before building!\nUse the /rules command\nto see them.",
-		number = 0xFF6666,
-		alignment = {x=0,y=0},
-		offset = {x=0,y=0}
-	})
-	minetest.after(0,newplayer.showrulesform,name)
+	if minetest.get_player_privs(name).nointeract and not minetest.get_player_privs(name).interact then
+		newplayer.hudids[name] = player:hud_add({
+			hud_elem_type = "text",
+			position = {x=0.5,y=0.5},
+			scale = {x=100,y=100},
+			text = "BUILDING DISABLED\nYou must agree to\nthe rules before building!\nUse the /rules command\nto see them.",
+			number = 0xFF6666,
+			alignment = {x=0,y=0},
+			offset = {x=0,y=0}
+		})
+	end
+	if minetest.get_player_privs(name).nointeract then
+		minetest.after(0,newplayer.showrulesform,name)
+	end
 end)
 
 minetest.register_on_player_receive_fields(function(player,formname,fields)
@@ -135,8 +140,12 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 		if fields.yes and minetest.get_player_privs(name).nointeract then
 			if  #newplayer.keywords == 0 or (not newplayer.assigned_keywords[name]) or string.lower(fields.keyword) == string.lower(newplayer.assigned_keywords[name]) then
 				local privs = minetest.get_player_privs(name)
-				privs.interact = true
-				minetest.set_player_privs(name,privs)
+				local keyword_privs = minetest.string_to_privs(minetest.setting_get("keyword_interact_privs") or "interact,shout,fast")
+					for priv, state in pairs(keyword_privs,privs) do
+						privs[priv] = state
+					end
+					privs.nointeract = nil
+				minetest.set_player_privs(name, privs)
 				if newplayer.hudids[name] then
 					minetest.get_player_by_name(name):hud_remove(newplayer.hudids[name])
 					minetest.get_player_by_name(name):hud_remove(newplayer.hudids[name]-1)
@@ -163,7 +172,15 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 				minetest.show_formspec(name,"newplayer:tryagain",form)
 			end
 		
-		elseif fields.yes and not minetest.get_player_privs(name).nointeract then minetest.chat_send_player(name,"You are forbidden from getting interact!")
+		elseif fields.yes and not minetest.get_player_privs(name).nointeract then 
+			minetest.chat_send_player(name,"You are forbidden from getting interact!")
+			local form =    "size[5,3]"..
+						"label[1,0;Thank you for agreeing]"..
+						"label[1,0.5;to the rules!]"..
+						"label[1,1;However you will need.]"..
+						"label[1,1.5;to contact an admin to play.]"..
+						"button_exit[1.5,2;2,1;quit;OK]"
+				minetest.show_formspec(name,"newplayer:nointeract",form)
 		
 		elseif fields.no then
 			local form =    "size[5,3]"..
@@ -295,6 +312,7 @@ minetest.register_chatcommand("delkeyword",{
 minetest.register_chatcommand("spawn",{
 	params = "",
 	description = "Teleport to the spawn",
+	privs = {spawn=true},
 	func = function(name)
 		local hasinteract = minetest.check_player_privs(name,{interact=true})
 		local player = minetest.get_player_by_name(name)
