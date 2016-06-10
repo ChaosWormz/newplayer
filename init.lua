@@ -190,6 +190,11 @@ minetest.register_on_player_receive_fields(function(player,formname,fields)
 		end
 	elseif formname == "newplayer:agreethanks" or formname == "newplayer:disagreewarning" then
 		return true
+	elseif formname == "newplayer:help" then
+		if fields.yes then
+			newplayer.showrulesform(name)
+		end
+		return true
 	else
 		return false
 	end
@@ -312,3 +317,20 @@ minetest.register_chatcommand("spawn",{
 		end
 	end}
 )
+
+minetest.register_on_chat_message(function(name, message)
+	if minetest.check_player_privs(name,{interact=true}) then
+		return
+	end
+	if message:lower():find("rules") then
+		newplayer.showrulesform(name)
+	elseif message:lower():find("help") then
+		local fs =      "size[5,3]"..
+				"label[0,0;In order to build,]"..
+				"label[0,0.5;you must read and agree to the rules.]"..
+				"label[0,1;View them now?]"..
+				"button[0,2;2,1;yes;Yes]"..
+				"button_exit[3,2;2,1;quit;No]"
+		minetest.show_formspec(name,"newplayer:help",fs)
+	end
+end)
