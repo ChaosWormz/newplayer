@@ -10,5 +10,9 @@ To set the rules, either place a file called "newplayer-rules.txt" in the world 
 If one or more keywords are set (Use /getkeywords to see them, /addkeyword to add one, or /delkeyword to remove one, all three require server privs.), then players will have to enter a randomly-chosen entry from the list into a provided text box before clicking the agree button. It is then possible to put the string "@KEYWORD" in the rules, which will be replaced with the chosen keyword when they are shown to a player without interact. This substitution (intentionally) does not occur when the rules are being shown to somebody with interact (for example, if they use the /rules command because they want to re-read them)* so that they can't see the keyword, preventing them from telling other players what it is... or what they think it is, since the other player will likely have a different keyword assuming several are set.
 If a keyword is not set, players are not asked for it and simply pressing the "I agree" button is enough.
 
+If a player without interact says anything containing the word "help" (case-insensitive), they are shown a message box explaining that they need to read the rules before they can build. If they choose to do so, the rules are shown.
+
+If a player without interact says anything containing the word "rules" (case-insensitive), they are shown the rules. This covers several types of failed attempts at using the chat command, such as "rules", "\rules", " /rules", etc.
+
 
 * Like that ever happens.
